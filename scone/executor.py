@@ -273,22 +273,22 @@ class SconeTopDownExecutor(SconeExecutor):
             # Color: Append to the function arguments
             obj = name
             ready = self.check_argument(denotation.execution_stack[-1], obj)
-            denotation.execution_stack[-1].append(obj)
+            denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [obj]
         elif name[0] == '-' or name[0].isdigit():
             # Number: Append to the function arguments
             obj = int(name)
             ready = self.check_argument(denotation.execution_stack[-1], obj)
-            denotation.execution_stack[-1].append(obj)
+            denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [obj]
         elif name[0] == 'X':
             # Fraction: Append to the function arguments
             obj = name
             ready = self.check_argument(denotation.execution_stack[-1], obj)
-            denotation.execution_stack[-1].append(obj)
+            denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [obj]
         elif name == 'all-objects':
             # All objects: Append to the function arguments
             obj = denotation.world_state.all_objects
             ready = self.check_argument(denotation.execution_stack[-1], obj)
-            denotation.execution_stack[-1].append(obj)
+            denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [obj]
         elif name[0] == 'A' or name == 'H0' or name == 'HUndo':
             # Action: Push onto the stack
             assert not denotation.execution_stack
@@ -311,14 +311,14 @@ class SconeTopDownExecutor(SconeExecutor):
                 result = denotation.world_state.apply_join(args[1], name[1:])
                 assert result, 'Empty result'
                 ready = self.check_argument(denotation.execution_stack[-1], result)
-                denotation.execution_stack[-1].append(result)
+                denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [result]
             elif name[0] == 'D':
                 # Double-Property: Join with the values
                 result = denotation.world_state.apply_double_join(
                         args[1], args[2], name[1:])
                 assert result, 'Empty result'
                 ready = self.check_argument(denotation.execution_stack[-1], result)
-                denotation.execution_stack[-1].append(result)
+                denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [result]
             elif name[0] == 'A':
                 # Perform action
                 new_state, history_entry = denotation.world_state.apply_action(
@@ -338,7 +338,7 @@ class SconeTopDownExecutor(SconeExecutor):
                     # Negative indices: count from the right
                     result = objects[number]
                 ready = self.check_argument(denotation.execution_stack[-1], result)
-                denotation.execution_stack[-1].append(result)
+                denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [result]
             elif name[0] == 'H':
                 # History slot
                 number = args[1]
@@ -364,7 +364,7 @@ class SconeTopDownExecutor(SconeExecutor):
                         assert isinstance(argument, SconeObject)
                         argument = denotation.world_state.resolve_argument(argument)
                     ready = self.check_argument(denotation.execution_stack[-1], argument)
-                    denotation.execution_stack[-1].append(argument)
+                    denotation.execution_stack[-1] = denotation.execution_stack[-1][:] + [argument]
             else:
                 raise ValueError('Unknown predicate {}'.format(name))
         return denotation
