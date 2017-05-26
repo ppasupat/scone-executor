@@ -1,6 +1,6 @@
 import pytest
 
-from scone.executor import SconeExecutor
+from scone.executor import SconeExecutor, SconeTopDownExecutor
 from scone.predicate import SconePredicate
 from scone.state import SconeAlchemyState, SconeSceneState, SconeTangramsState, SconeUndogramsState
 
@@ -23,7 +23,7 @@ class SconeExecutorTester(object):
     def assert_good(self, initial_state, lf, final_state):
         initial_state = self.prepare_state(initial_state)
         final_state = self.prepare_state(final_state)
-        executor = SconeExecutor(initial_state, debug=True)
+        executor = self.EXECUTOR_CLASS(initial_state, debug=True)
         lf = self.prepare_lf(lf)
         print '=' * 10, lf, '=' * 10
         # Direct execution
@@ -39,7 +39,7 @@ class SconeExecutorTester(object):
 
     def assert_bad(self, initial_state, lf):
         initial_state = self.prepare_state(initial_state)
-        executor = SconeExecutor(initial_state, debug=True)
+        executor = self.EXECUTOR_CLASS(initial_state, debug=True)
         lf = self.prepare_lf(lf)
         print '=' * 10, lf, '=' * 10
         # Direct execution
@@ -62,6 +62,7 @@ class SconeExecutorTester(object):
 
 class TestAlchemyExecutor(SconeExecutorTester):
     STATE_CLASS = SconeAlchemyState
+    EXECUTOR_CLASS = SconeExecutor
 
     def test_simple(self):
         # 1:ggg 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg throw out two units of first beaker 1:g 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg throw out fifth beaker 1:g 2:_ 3:_ 4:_ 5:_ 6 :ooo 7:gggg throw out first one 1:_ 2:_ 3:_ 4:_ 5:_ 6:ooo 7:gggg throw out orange beaker 1:_ 2:_ 3:_ 4:_ 5:_ 6:_ 7:gggg throw out one unit of green 1:_ 2:_ 3:_ 4:_ 5:_ 6:_ 7:ggg
@@ -105,6 +106,7 @@ class TestAlchemyExecutor(SconeExecutorTester):
 
 class TestSceneExecutor(SconeExecutorTester):
     STATE_CLASS = SconeSceneState
+    EXECUTOR_CLASS = SconeExecutor
 
     def test_simple(self):
         # train-1100  1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo  a man in a green shirt and an orange hat stands near the middle and a man in a yellow shirt and an orange hat stands on the far right 1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo  a man in a red shirt and no hat enters and stands on the far left 1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:y_ 10:yo  a man in a yellow shirt and no hat joins and stands next to the man in the yellow shirt and orange hat  1:r_ 2:__ 3:__ 4:__ 5:__ 6:go 7:__ 8:__ 9:y_ 10:yo  the man in the yellow shirt and orange hat moves next to the man in the green shirt and orange hat, he stands on the right  1:r_ 2:__ 3:__ 4:__ 5:__ 6:go 7:yo 8:__ 9:y_ 10:__  a man in a green shirt and no hat joins and stands next to the man in the green shirt and orange hat  1:r_ 2:__ 3:__ 4:__ 5:g_ 6:go 7:yo 8:__ 9:y_ 10:__
@@ -162,6 +164,7 @@ class TestSceneExecutor(SconeExecutorTester):
 
 class TestTangramsExecutor(SconeExecutorTester):
     STATE_CLASS = SconeTangramsState
+    EXECUTOR_CLASS = SconeExecutor
 
     def test_simple(self):
         # train-437 1:2 2:1 3:4 4:0 5:3 delete the second object from the left  1:2 2:4 3:0 4:3 delete the leftmost object  1:4 2:0 3:3 swap the leftmost and the rightmost objects 1:3 2:0 3:4 swap them again 1:4 2:0 3:3 add back the object we removed on step 1  1:1 2:4 3:0 4:3
@@ -212,6 +215,7 @@ class TestTangramsExecutor(SconeExecutorTester):
 
 class TestUndogramsExecutor(SconeExecutorTester):
     STATE_CLASS = SconeUndogramsState
+    EXECUTOR_CLASS = SconeExecutor
 
     def test_simple(self):
         # train-437 1:2 2:1 3:4 4:0 5:3 delete the second object from the left  1:2 2:4 3:0 4:3 delete the leftmost object  1:4 2:0 3:3 swap the leftmost and the rightmost objects 1:3 2:0 3:4 swap them again 1:4 2:0 3:3 add back the object we removed on step 1  1:1 2:4 3:0 4:3
@@ -277,4 +281,229 @@ class TestUndogramsExecutor(SconeExecutorTester):
                 'all-objects 1 index ARemove ' +
                 'all-objects 1 index all-objects 3 index ASwap ' +
                 '4 H1 4 H2 4 HUndo',
+                '1:1 2:3 3:0 4:4')
+
+################################
+
+class TestAlchemyTopDownExecutor(SconeExecutorTester):
+    STATE_CLASS = SconeAlchemyState
+    EXECUTOR_CLASS = SconeTopDownExecutor
+
+    def test_simple(self):
+        # 1:ggg 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg throw out two units of first beaker 1:g 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg throw out fifth beaker 1:g 2:_ 3:_ 4:_ 5:_ 6 :ooo 7:gggg throw out first one 1:_ 2:_ 3:_ 4:_ 5:_ 6:ooo 7:gggg throw out orange beaker 1:_ 2:_ 3:_ 4:_ 5:_ 6:_ 7:gggg throw out one unit of green 1:_ 2:_ 3:_ 4:_ 5:_ 6:_ 7:ggg
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg',
+                'ADrain index all-objects 1 2',
+                '1:g 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg',
+                'ADrain index PColor g 1 2',
+                '1:g 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gggg',
+                'ADrain PColor r 1',
+                '1:ggg 2:_ 3:_ 4:_ 5:o 6:ooo 7:gggg')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gggg',
+                'APour index all-objects 5 PColor r',
+                '1:ggg 2:_ 3:_ 4:ro 5:_ 6:ooo 7:gggg')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gggg',
+                'ADrain index all-objects -1 X1/2',
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gg')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gggg',
+                'ADrain index all-objects -1 X1/2 ADrain index all-objects -1 1',
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:g')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gggg',
+                'ADrain index all-objects -1 X1/2 ADrain H1 -1 1',
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:g')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gggg',
+                'ADrain index all-objects -1 X1/2 H0 -1 H1 1 H2 -1',
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:_')
+        self.assert_good(
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:gggg',
+                'ADrain index all-objects -1 X1/2 H0 -1 H1 -1 H2 -1',
+                '1:ggg 2:_ 3:_ 4:r 5:o 6:ooo 7:_')
+
+
+class TestSceneTopDownExecutor(SconeExecutorTester):
+    STATE_CLASS = SconeSceneState
+    EXECUTOR_CLASS = SconeTopDownExecutor
+
+    def test_simple(self):
+        # train-1100  1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo  a man in a green shirt and an orange hat stands near the middle and a man in a yellow shirt and an orange hat stands on the far right 1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo  a man in a red shirt and no hat enters and stands on the far left 1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:y_ 10:yo  a man in a yellow shirt and no hat joins and stands next to the man in the yellow shirt and orange hat  1:r_ 2:__ 3:__ 4:__ 5:__ 6:go 7:__ 8:__ 9:y_ 10:yo  the man in the yellow shirt and orange hat moves next to the man in the green shirt and orange hat, he stands on the right  1:r_ 2:__ 3:__ 4:__ 5:__ 6:go 7:yo 8:__ 9:y_ 10:__  a man in a green shirt and no hat joins and stands next to the man in the green shirt and orange hat  1:r_ 2:__ 3:__ 4:__ 5:g_ 6:go 7:yo 8:__ 9:y_ 10:__
+        # Well the sentences were really wrong ...
+        self.assert_good(
+                '1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo',
+                'ACreate 1 r e',
+                '1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo')
+        self.assert_bad(
+                '1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo',
+                'ACreate 7 r e')
+        self.assert_good(
+                '1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo',
+                'ACreate 1 r e ACreate 9 y e',
+                '1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:y_ 10:yo')
+        self.assert_good(
+                '1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo',
+                'ACreate 1 r e ACreate PLeft DShirtHat y o y e',
+                '1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:y_ 10:yo')
+        self.assert_good(
+                '1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo',
+                'ACreate 1 r e ACreate PLeft DShirtHat y o y e ' +
+                'AMove PShirt g PLeft PShirt g',
+                '1:r_ 2:__ 3:__ 4:__ 5:__ 6:go 7:__ 8:__ 9:y_ 10:yo')
+        self.assert_good(
+                '1:__ 2:__ 3:__ 4:__ 5:__ 6:__ 7:go 8:__ 9:__ 10:yo',
+                'ACreate 1 r e ACreate PLeft DShirtHat y o y e ' +
+                'AMove PShirt g PLeft PShirt g ' +
+                'ALeave index all-objects 2',
+                '1:r_ 2:__ 3:__ 4:__ 5:__ 6:__ 7:__ 8:__ 9:y_ 10:yo')
+        # train-1101  1:bo 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__  the person in an orange hat moves to the left of the person in a red hat  1:__ 2:__ 3:bo 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__  he then disappears  1:__ 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__  then a person in orange appears on the far right  1:__ 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:o_  he then disappears  1:__ 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__  the person in blue in a red hat moves to the far left 1:br 2:__ 3:__ 4:__ 5:__ 6:__ 7:__ 8:__ 9:__ 10:__
+        self.assert_good(
+                '1:bo 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__',
+                'AMove PHat o PLeft PHat r',
+                '1:__ 2:__ 3:bo 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__')
+        self.assert_good(
+                '1:bo 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__',
+                'AMove PHat o PLeft PHat r ALeave H1 -1',
+                '1:__ 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__')
+        self.assert_good(
+                '1:bo 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__',
+                'AMove PHat o PLeft PHat r ALeave H1 -1 ACreate -1 o e',
+                '1:__ 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:o_')
+        self.assert_good(
+                '1:bo 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__',
+                'AMove PHat o PLeft PHat r ALeave H1 -1 ACreate -1 o e ' +
+                'ALeave H1 -1',
+                '1:__ 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__')
+        self.assert_good(
+                '1:bo 2:__ 3:__ 4:br 5:__ 6:__ 7:__ 8:__ 9:__ 10:__',
+                'AMove PHat o PLeft PHat r ALeave H1 -1 ACreate -1 o e ' +
+                'ALeave H1 -1 AMove DShirtHat b r 1',
+                '1:br 2:__ 3:__ 4:__ 5:__ 6:__ 7:__ 8:__ 9:__ 10:__')
+
+
+class TestTangramsTopDownExecutor(SconeExecutorTester):
+    STATE_CLASS = SconeTangramsState
+    EXECUTOR_CLASS = SconeTopDownExecutor
+
+    def test_simple(self):
+        # train-437 1:2 2:1 3:4 4:0 5:3 delete the second object from the left  1:2 2:4 3:0 4:3 delete the leftmost object  1:4 2:0 3:3 swap the leftmost and the rightmost objects 1:3 2:0 3:4 swap them again 1:4 2:0 3:3 add back the object we removed on step 1  1:1 2:4 3:0 4:3
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2',
+                '1:2 2:4 3:0 4:3')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1',
+                '1:4 2:0 3:3')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1 ' +
+                'ASwap index all-objects 1 index all-objects -1',
+                '1:3 2:0 3:4')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1 ' +
+                'ASwap index all-objects 1 index all-objects -1 ' +
+                'ASwap H1 -1 H2 -1',
+                '1:4 2:0 3:3')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1 ' +
+                'ASwap index all-objects 1 index all-objects -1 ' +
+                'ASwap H1 -1 H2 -1 AAdd 1 H1 1',
+                '1:1 2:4 3:0 4:3')
+        # train-438 1:0 2:2 3:4 4:3 5:1 swap the second and third figures 1:0 2:4 3:2 4:3 5:1 remove the second figure  1:0 2:2 3:3 4:1 swap the second and third figures 1:0 2:3 3:2 4:1 remove the third figure 1:0 2:3 3:1 add back the figure removed in step 2, and place in the third space 1:0 2:3 3:4 4:1
+        self.assert_good(
+                '1:0 2:2 3:4 4:3 5:1',
+                'ASwap index all-objects 2 index all-objects 3',
+                '1:0 2:4 3:2 4:3 5:1')
+        self.assert_good(
+                '1:0 2:2 3:4 4:3 5:1',
+                'ASwap index all-objects 2 index all-objects 3 ' +
+                'ARemove index all-objects 2',
+                '1:0 2:2 3:3 4:1')
+        self.assert_good(
+                '1:0 2:2 3:4 4:3 5:1',
+                'ASwap index all-objects 2 index all-objects 3 ' +
+                'ARemove index all-objects 2 ' +
+                'ASwap index all-objects 2 index all-objects 3 ' +
+                'ARemove index all-objects 3 ' +
+                'AAdd 3 H1 2',
+                '1:0 2:3 3:4 4:1')
+
+
+class TestUndogramsTopDownExecutor(SconeExecutorTester):
+    STATE_CLASS = SconeUndogramsState
+    EXECUTOR_CLASS = SconeTopDownExecutor
+
+    def test_simple(self):
+        # train-437 1:2 2:1 3:4 4:0 5:3 delete the second object from the left  1:2 2:4 3:0 4:3 delete the leftmost object  1:4 2:0 3:3 swap the leftmost and the rightmost objects 1:3 2:0 3:4 swap them again 1:4 2:0 3:3 add back the object we removed on step 1  1:1 2:4 3:0 4:3
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2',
+                '1:2 2:4 3:0 4:3')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1',
+                '1:4 2:0 3:3')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1 ' +
+                'ASwap index all-objects 1 index all-objects -1',
+                '1:3 2:0 3:4')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1 ' +
+                'ASwap index all-objects 1 index all-objects -1 ' +
+                'ASwap H1 -1 H2 -1',
+                '1:4 2:0 3:3')
+        self.assert_good(
+                '1:2 2:1 3:4 4:0 5:3',
+                'ARemove index all-objects 2 ARemove index all-objects 1 ' +
+                'ASwap index all-objects 1 index all-objects -1 ' +
+                'ASwap H1 -1 H2 -1 AAdd 1 H2 1',
+                '1:1 2:4 3:0 4:3')
+        # train-438 1:0 2:2 3:4 4:3 5:1 swap the second and third figures 1:0 2:4 3:2 4:3 5:1 remove the second figure  1:0 2:2 3:3 4:1 swap the second and third figures 1:0 2:3 3:2 4:1 remove the third figure 1:0 2:3 3:1 add back the figure removed in step 2, and place in the third space 1:0 2:3 3:4 4:1
+        self.assert_good(
+                '1:0 2:2 3:4 4:3 5:1',
+                'ASwap index all-objects 2 index all-objects 3',
+                '1:0 2:4 3:2 4:3 5:1')
+        self.assert_good(
+                '1:0 2:2 3:4 4:3 5:1',
+                'ASwap index all-objects 2 index all-objects 3 ' +
+                'ARemove index all-objects 2',
+                '1:0 2:2 3:3 4:1')
+        self.assert_good(
+                '1:0 2:2 3:4 4:3 5:1',
+                'ASwap index all-objects 2 index all-objects 3 ' +
+                'ARemove index all-objects 2 ' +
+                'ASwap index all-objects 2 index all-objects 3 ' +
+                'ARemove index all-objects 3 ' +
+                'AAdd 3 H2 2',
+                '1:0 2:3 3:4 4:1')
+
+    def test_undo(self):
+        # train-440 1:2 2:1 3:3 4:0 5:4 delete the rightmost figure 1:2 2:1 3:3 4:0 undo step 1 1:2 2:1 3:3 4:0 5:4 delete the 1st figure 1:1 2:3 3:0 4:4 swap the 1st and 3rd figure 1:0 2:3 3:1 4:4 undo step 4 1:1 2:3 3:0 4:4
+        self.assert_good(
+                '1:2 2:1 3:3 4:0 5:4',
+                'ARemove index all-objects -1',
+                '1:2 2:1 3:3 4:0')
+        self.assert_good(
+                '1:2 2:1 3:3 4:0 5:4',
+                'ARemove index all-objects -1 ' +
+                'HUndo 1 H1 1 H2 1',
+                '1:2 2:1 3:3 4:0 5:4')
+        self.assert_good(
+                '1:2 2:1 3:3 4:0 5:4',
+                'ARemove index all-objects -1 ' +
+                'HUndo 1 H1 1 H2 1 ' +
+                'ARemove index all-objects 1 ' +
+                'ASwap index all-objects 1 index all-objects 3 ' +
+                'HUndo 4 H1 4 H2 4',
                 '1:1 2:3 3:0 4:4')
