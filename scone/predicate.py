@@ -111,9 +111,10 @@ ALCHEMY_PREDICATES = [
             '1', '2', '3', '4', '5', '6', '7',
             '-1',
             'X1/1',
+            'all-objects',
+            'index',
             'PColor',
             'APour', 'AMix', 'ADrain',
-            'all-objects', 'index',
             'H0', 'H1', 'H2',
             ]]
 
@@ -122,9 +123,10 @@ SCENE_PREDICATES = [
             'r', 'y', 'g', 'o', 'p', 'b', 'e',
             '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
             '-1',
+            'all-objects',
+            'index',
             'PShirt', 'PHat', 'PLeft', 'PRight', 'DShirtHat',
             'ALeave', 'ASwapHats', 'AMove', 'ACreate',
-            'all-objects', 'index',
             'H0', 'H1', 'H2', 'H3',
             ]]
 
@@ -132,8 +134,9 @@ TANGRAMS_PREDICATES = [
         SconePredicate(x) for x in [
             '1', '2', '3', '4', '5',
             '-1',
+            'all-objects',
+            'index',
             'AAdd', 'ASwap', 'ARemove',
-            'all-objects', 'index',
             'H0', 'H1', 'H2',
             ]]
 
@@ -141,7 +144,8 @@ UNDOGRAMS_PREDICATES = [
         SconePredicate(x) for x in [
             '1', '2', '3', '4', '5',
             '-1',
+            'all-objects',
+            'index',
             'AAdd', 'ASwap', 'ARemove',
-            'all-objects', 'index',
             'H0', 'H1', 'H2', 'HUndo',
             ]]

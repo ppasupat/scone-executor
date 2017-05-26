@@ -225,15 +225,33 @@ class SconeTopDownExecutor(SconeExecutor):
             If the argument is valid, return True if the number of arguments
             matches the number of required arguments, and False otherwise.
         """
-        # TODO: Better type checking
-        name = current_args[0]
         n = len(current_args)
-        if name == 'index':
-            return n == 2
-        if name[0] == 'H':
-            assert isinstance(next_arg, int)
-            return n == 1
-        return self.initial_state.check_argument(current_args, next_arg)
+        t = self.get_type(next_arg)
+        if current_args[0][0] == 'H':
+            arg_types = ('I',)
+        elif current_args[0] == 'index':
+            arg_types = ('O', 'I')
+        else:
+            arg_types = self.initial_state.ARG_TYPES[current_args[0]]
+        assert t in arg_types[n-1] or t == '?'
+        return n == len(arg_types)
+
+    def get_type(self, next_arg):
+        if isinstance(next_arg, int):
+            return 'I'
+        elif isinstance(next_arg, (list, SconeObject)):
+            return 'O'
+        elif isinstance(next_arg, str):
+            if len(next_arg) == 1:
+                return 'C'
+            elif next_arg[0] == 'H':
+                return '?'
+            elif next_arg[0] == 'X':
+                return 'F'
+            elif next_arg == 'index':
+                return 'O'
+            return self.initial_state.RETURN_TYPE[next_arg]
+        raise ValueError('Unknown argument {}'.format(next_arg))
 
     def apply(self, name, denotation):
         """Return a new denotation.

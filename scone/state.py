@@ -47,23 +47,6 @@ class SconeState(object):
         """
         raise NotImplementedError
 
-    @classmethod
-    def check_argument(cls, current_args, next_arg):
-        """Check if the next argument is valid.
-
-        Args:
-            current_args (list):
-                The first item is a function name (str);
-                the rest are existing arguments
-            next_arg (object):
-                The next argument to be added.
-        Returns:
-            If the argument is invalid, throw an error.
-            If the argument is valid, return True if the number of arguments
-            matches the number of required arguments, and False otherwise.
-        """
-        raise NotImplementedError
-
     def apply_join(self, value, prop):
         """Return the result of joining the property with the value.
 
@@ -209,20 +192,15 @@ class SconeAlchemyState(SconeState):
                 '' if raw_chemicals == '_' else raw_chemicals))
         return cls(objects)
 
-    @classmethod
-    def check_argument(cls, current_args, next_arg):
-        name = current_args[0]
-        n = len(current_args)
-        if name[0] == 'P':
-            return n == 1
-        elif name[0] == 'A':
-            if name == 'APour':
-                return n == 2
-            elif name == 'ADrain':
-                return n == 2
-            elif name == 'AMix':
-                return n == 1
-        raise ValueError('Unknown predicate {}'.format(name))
+    ARG_TYPES = {
+            'PColor': ('C',),
+            'APour': ('O', 'O'),
+            'AMix': ('O',),
+            'ADrain': ('O', 'IF'),
+            }
+    RETURN_TYPE = {
+            'PColor': 'O',
+            }
 
     def apply_join(self, value, prop):
         if prop == 'Color':
@@ -382,24 +360,24 @@ class SconeSceneState(SconeState):
                 id_ += 1
         return cls(objects, id_)
 
-    @classmethod
-    def check_argument(cls, current_args, next_arg):
-        name = current_args[0]
-        n = len(current_args)
-        if name[0] == 'P':
-            return n == 1
-        elif name[0] == 'D':
-            return n == 2
-        elif name[0] == 'A':
-            if name == 'ALeave':
-                return n == 1
-            elif name == 'ASwapHats':
-                return n == 2
-            elif name == 'AMove':
-                return n == 2
-            elif name == 'ACreate':
-                return n == 3
-        raise ValueError('Unknown predicate {}'.format(name))
+    ARG_TYPES = {
+            'PShirt': ('C',),
+            'PHat': ('C',),
+            'PLeft': ('O'),
+            'PRight': ('O'),
+            'DShirtHat': ('C', 'C'),
+            'ALeave': ('O',),
+            'ASwapHats': ('O', 'O'),
+            'AMove': ('O', 'I'),
+            'ACreate': ('I', 'C', 'C'),
+            }
+    RETURN_TYPE = {
+            'PShirt': 'O',
+            'PHat': 'O',
+            'PLeft': 'I',
+            'PRight': 'I',
+            'DShirtHat': 'O',
+            }
 
     def get_object_with_id(self, id_):
         target = [x for x in self._objects if x.id_ == id_]
@@ -569,20 +547,13 @@ class SconeTangramsState(SconeState):
                 int(raw_position), raw_shape))
         return cls(objects)
 
-    @classmethod
-    def check_argument(cls, current_args, next_arg):
-        name = current_args[0]
-        n = len(current_args)
-        if name[0] == 'P':
-            return n == 1
-        elif name[0] == 'A':
-            if name == 'AAdd':
-                return n == 2
-            elif name == 'ASwap':
-                return n == 2
-            elif name == 'ARemove':
-                return n == 1
-        raise ValueError('Unknown predicate {}'.format(name))
+    ARG_TYPES = {
+            'AAdd': ('I', 'O'),
+            'ASwap': ('O', 'O'),
+            'ARemove': ('O',),
+            }
+    RETURN_TYPE = {
+            }
 
     def get_object_with_shape(self, shape):
         target = [x for x in self._objects if x.shape == shape]
